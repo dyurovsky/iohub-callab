@@ -30,7 +30,7 @@ eyetracker.hw.smi.iviewx.EyeTracker:
                 min_length: 0
                 max_length: 1            
         graphics_env: INTERNAL                  
-        auto_pace: IOHUB_BOOL
+        auto_pace: [FULL, SEMI, MANUAL]
         pacing_speed: [ SLOW, FAST ]
         screen_background_color:
             IOHUB_INT:

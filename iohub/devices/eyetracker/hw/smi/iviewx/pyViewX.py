@@ -633,6 +633,8 @@ Set = 1 # <input>: 204
 
 enum_CalibrationStatusEnum = c_int # <input>: 222
 
+enum_CalibrationPointUsageStatusEnum = c_int
+
 calibrationUnknown = 0 # <input>: 222
 
 calibrationInvalid = 1 # <input>: 222
@@ -672,6 +674,33 @@ struct_SystemInfoStruct._fields_ = [
     ('iV_ETDevice', enum_ETDevice),
 ]
 
+# <input>: 
+class struct_CalibrationPointQualityStruct(Structure):
+    pass
+
+struct_CalibrationPointQualityStruct.__slots__ = [
+    'correctedPorX',
+    'correctedPorY',
+    'number',
+    'positionX',
+    'positionY',
+    'qualityIndex',
+    'standardDeviationX',
+    'standardDeviationY',
+    'usageStatus',
+]
+struct_CalibrationPointQualityStruct._fields_ = [
+    ('correctedPorX', c_double),
+    ('correctedPorY', c_double),
+    ('number', c_int),
+    ('positionX', c_int),
+    ('positionY', c_int),
+    ('qualityIndex', c_double),
+    ('standardDeviationX', c_double),
+    ('standardDeviationY', c_double),
+    ('usageStatus', enum_CalibrationPointUsageStatusEnum),
+]
+
 # <input>: 294
 class struct_CalibrationPointStruct(Structure):
     pass
@@ -686,6 +715,7 @@ struct_CalibrationPointStruct._fields_ = [
     ('positionX', c_int),
     ('positionY', c_int),
 ]
+
 
 # <input>: 315
 class struct_EyeDataStruct(Structure):
@@ -919,7 +949,7 @@ struct_ImageStruct._fields_ = [
     ('imageHeight', c_int),
     ('imageWidth', c_int),
     ('imageSize', c_int),
-    ('imageBuffer', c_char_p),
+    ('imageBuffer', c_void_p),
 ]
 
 # <input>: 678
@@ -992,6 +1022,12 @@ pDLLSetEyeImage = WINFUNCTYPE(UNCHECKED(c_int), struct_ImageStruct) # <input>: 7
 pDLLSetSceneVideo = WINFUNCTYPE(UNCHECKED(c_int), struct_ImageStruct) # <input>: 778
 
 pDLLSetTrackingMonitor = WINFUNCTYPE(UNCHECKED(c_int), struct_ImageStruct) # <input>: 783
+
+# <input>: 
+if hasattr(_libs['iViewXAPI'], 'iV_GetCalibrationQuality'):
+    GetCalibrationQuality = _libs['iViewXAPI'].iV_GetCalibrationQuality
+    GetCalibrationQuality.argtypes = [c_int, POINTER(struct_CalibrationPointQualityStruct), POINTER(struct_CalibrationPointQualityStruct)]
+    GetCalibrationQuality.restype = c_int
 
 # <input>: 798
 if hasattr(_libs['iViewXAPI'], 'iV_AbortCalibration'):
@@ -1142,6 +1178,12 @@ if hasattr(_libs['iViewXAPI'], 'iV_GetAccuracyImage'):
     GetAccuracyImage = _libs['iViewXAPI'].iV_GetAccuracyImage
     GetAccuracyImage.argtypes = [POINTER(struct_ImageStruct)]
     GetAccuracyImage.restype = c_int
+    
+# <input>: 
+if hasattr(_libs['iViewXAPI'], 'iV_GetCalibrationQualityImage'):
+    GetCalibrationQualityImage = _libs['iViewXAPI'].iV_GetCalibrationQualityImage
+    GetCalibrationQualityImage.argtypes = [POINTER(struct_ImageStruct)]
+    GetCalibrationQualityImage.restype = c_int
 
 # <input>: 1163
 if hasattr(_libs['iViewXAPI'], 'iV_GetAOIOutputValue'):
@@ -1531,6 +1573,8 @@ SystemInfoStruct = struct_SystemInfoStruct # <input>: 258
 
 CalibrationPointStruct = struct_CalibrationPointStruct # <input>: 294
 
+CalibrationPointQualityStruct = struct_CalibrationPointQualityStruct # <input>: 
+
 EyeDataStruct = struct_EyeDataStruct # <input>: 315
 
 SampleStruct = struct_SampleStruct # <input>: 344
@@ -1827,6 +1871,31 @@ etCalibrationStatusEnum = dict(
 	
 	#//! the device is currently performing a calibration 
 	calibrationInProgress = 3)
+    
+#/**
+#* @enum CalibrationPointUsageStatusEnum
+#*
+#* @brief This enum provides information about the eyetracking-server calibration status. If the 
+#* device is not calibrated the eyetracking-server won't deliver valid gaze data. Use the functions 
+#* @ref iV_GetCalibrationStatus to retrieve the calibration status and 
+#* @ref iV_Calibrate to perform a calibration. 
+#*/ 
+etCalibrationPointUsageStatusEnum = dict(
+	#//! calibration status is unknown (i.e. if the connection is not established) 
+	calibrationPointUsed = 0, 
+	
+	#//! the device is not calibrated and will not deliver valid gaze data 
+	calibrationPointUnused = 1, 
+	
+	#//! the device is calibrated and will deliver valid gaze data 
+	calibrationPointUnusedBecauseofTimeout = 2, 
+	
+	#//! the device is currently performing a calibration 
+	calibrationPointUnusedBecauseofBadQuality = 3,
+    
+    #//! the device is not calibrated and will not deliver valid gaze data 
+	calibrationPointIgnored = 4)    
+    
 
 #/**
 #* @enum REDGeometryEnum

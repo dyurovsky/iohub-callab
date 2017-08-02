@@ -23,8 +23,9 @@ from .... import EyeTrackerDevice
 from ....eye_events import *
 
 import pyViewX
-from ctypes import byref, c_longlong ,c_int, c_void_p,POINTER
+from ctypes import byref, c_longlong ,c_int, c_void_p,POINTER, c_char
 
+import PIL
 import gevent
 
 class EyeTracker(EyeTrackerDevice):
@@ -166,6 +167,118 @@ class EyeTracker(EyeTrackerDevice):
         print2err("iViewX trackerTime FAILED: error: {0} timeval: {1}".format(r,tracker_time))            
         return EyeTrackerConstants.EYETRACKER_ERROR
 
+    def acceptCalibrationPoint(self):
+        r = pyViewX.AcceptCalibrationPoint()
+        
+        return r
+
+   
+    def getEyeImage(self):
+        try:
+            eye_image = pyViewX.ImageStruct()
+            image_res = pyViewX.GetEyeImage(byref(eye_image))
+            
+            if image_res == pyViewX.RET_SUCCESS:
+                
+                height = getattr(eye_image,'imageHeight')
+                width = getattr(eye_image,'imageWidth')
+                size = getattr(eye_image,'imageSize')            
+            
+                image_buff = (c_char* size).from_address(getattr(eye_image,'imageBuffer'))
+
+                img = PIL.Image.frombytes("P", (width,height),image_buff, "raw", "P", 0, 1)
+                
+                img_loc = "et_imgs/eye_img.bmp"
+                img.save("et_imgs/eye_img.bmp")
+                return img_loc
+            return None
+            
+        except Exception, e:
+            print2err(" ---- SMI EyeTracker getEyeImage ERROR ---- ")
+            printExceptionDetailsToStdErr()
+        print2err("getEyeImage error!!: ", image_res)
+        return None
+    
+    def getTrackingMonitor(self):
+        try:
+            tracking_monitor = pyViewX.ImageStruct()
+            monitor_res = pyViewX.GetTrackingMonitor(byref(tracking_monitor))
+            
+            if monitor_res == pyViewX.RET_SUCCESS:
+                
+                height = getattr(tracking_monitor,'imageHeight')
+                width = getattr(tracking_monitor,'imageWidth')
+                size = getattr(tracking_monitor,'imageSize')            
+            
+                image_buff = (c_char* size).from_address(getattr(tracking_monitor,'imageBuffer'))
+
+                img = PIL.Image.frombytes("RGB",(width,height),image_buff, "raw", "BGR", 0, 1)
+                
+                img_loc = "et_imgs/tracking_img.bmp"
+                img.save("et_imgs/tracking_img.bmp")
+                return img_loc
+            return None
+        except Exception, e:
+            print2err(" ---- SMI EyeTracker getTrackingMonitor ERROR ---- ")
+            printExceptionDetailsToStdErr()
+        print2err("getTrackingMonitor error!!: ", monitor_res)
+        return None
+    
+    
+    def getAccuracyImage(self):
+        try:
+            accuracy_image = pyViewX.ImageStruct()
+            accuracy_res = pyViewX.GetAccuracyImage(byref(accuracy_image))
+            
+            if accuracy_res == pyViewX.RET_SUCCESS:
+                
+                height = getattr(accuracy_image,'imageHeight')
+                width = getattr(accuracy_image,'imageWidth')
+                size = getattr(accuracy_image,'imageSize')            
+            
+                image_buff = (c_char* size).from_address(getattr(accuracy_image,'imageBuffer'))
+
+                mir_img = PIL.Image.frombytes("RGB",(width,height),image_buff, "raw", "BGR", 0, 1)
+                img = mir_img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+                
+                img_loc = "et_imgs/accuracy_image.bmp"
+                img.save("et_imgs/accuracy_image.bmp")
+                return img_loc
+            return None
+        except Exception, e:
+            print2err(" ---- SMI EyeTracker getAccuracyImage ERROR ---- ")
+            printExceptionDetailsToStdErr()
+        print2err("getAccuracyImage error!!: ", accuracy_res)
+        return None
+        
+        
+    def getCalibrationQualityImage(self):
+        try:
+            quality_image = pyViewX.ImageStruct()
+            quality_res = pyViewX.GetCalibrationQualityImage(byref(quality_image))
+            
+            if quality_res == pyViewX.RET_SUCCESS:
+                
+                height = getattr(quality_image,'imageHeight')
+                width = getattr(quality_image,'imageWidth')
+                size = getattr(quality_image,'imageSize')            
+            
+                image_buff = (c_char* size).from_address(getattr(quality_image,'imageBuffer'))
+
+                mir_img = PIL.Image.frombytes("RGB",(width,height),image_buff, "raw", "BGR", 0, 1)
+                
+                img = mir_img.transpose(PIL.Image.FLIP_LEFT_RIGHT)
+                
+                img_loc = "et_imgs/quality_image.bmp"
+                img.save("et_imgs/quality_image.bmp")
+                return img_loc
+            return None
+        except Exception, e:
+            print2err(" ---- SMI EyeTracker getCalibrationQualityImage ERROR ---- ")
+            printExceptionDetailsToStdErr()
+        print2err("getCalibrationQualityImage error!!: ", quality_res)
+        return None
+    
     def trackerSec(self):
         """
         trackerSec returns the current iViewX Application or Server time in 
@@ -346,6 +459,90 @@ class EyeTracker(EyeTrackerDevice):
         # so it can be figured out.
         return result
 
+    # def runSetupProcedure(self,starting_state=EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE):
+        # """
+        # The SMI iViewX implementation of the runSetupProcedure supports the following 
+        # starting_state values:
+            
+            # #. DEFAULT_SETUP_PROCEDURE: This (default) mode starts by showing a dialog with the various options available during user setup.
+            # #. CALIBRATION_STATE: The eye tracker will immediately preform a calibration and then return to the experiment script.
+            # #. VALIDATION_STATE: The eye tracker will immediately preform a validation and then return to the experiment script. The return result is a dict containing the validation results.
+            # #. TRACKER_FEEDBACK_STATE: The eye tracker will display the eye image window and tracker graphics if either has been enabled in the device config, and then return to the experiment script.
+
+        # """
+        # if self.isConnected() is False:
+            # return EyeTrackerConstants.EYETRACKER_ERROR
+            
+        # try:       
+            # IMPLEMENTATION_SUPPORTED_STATES=[EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE,
+                                             # EyeTrackerConstants.CALIBRATION_STATE,
+                                             # EyeTrackerConstants.VALIDATION_STATE,
+                                             # EyeTrackerConstants.TRACKER_FEEDBACK_STATE]            
+
+            # if isinstance(starting_state,basestring):
+                # starting_state=EyeTrackerConstants.getID(starting_state)
+                        
+            # self._registerKeyboardMonitor()
+
+            # self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
+                        
+            # if starting_state not in IMPLEMENTATION_SUPPORTED_STATES:
+                # self._last_setup_result=EyeTrackerConstants.EYETRACKER_RECEIVED_INVALID_INPUT
+            # elif starting_state == EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE:                                
+                # self._showSetupKeyOptionsDialog()                    
+                # next_state=None
+                # key_mapping={'C':self._calibrate,
+                             # 'V':self._validate,
+                             # 'T':self._showTrackingMonitor,
+                             # 'E':self._showEyeImageMonitor,
+                             # 'ESCAPE':'CONTINUE',
+                             # 'F1':self._showSetupKeyOptionsDialog}
+                # while 1:
+                    # if next_state is None:                    
+                        # next_state=self._getKeyboardPress(key_mapping)
+                    
+                    # if callable(next_state):
+                        # next_state()
+                        # next_state=None                            
+                                            
+                    # elif next_state == 'CONTINUE':
+                        # break
+                       
+            # elif starting_state == EyeTrackerConstants.CALIBRATION_STATE:
+                # self._calibrate()
+            # elif starting_state == EyeTrackerConstants.VALIDATION_STATE:
+                # self._validate()
+            # elif starting_state == EyeTrackerConstants.TRACKER_FEEDBACK_STATE:
+                # self._showEyeImageMonitor()
+                # self._showTrackingMonitor()
+            # else:    
+                # self._last_setup_result = EyeTrackerConstants.EYETRACKER_RECEIVED_INVALID_INPUT
+            # self._unregisterKeyboardMonitor()
+            
+            # return self._last_setup_result
+        # except Exception, e:
+            # self._unregisterKeyboardMonitor()
+            # printExceptionDetailsToStdErr()
+
+        # try:
+            # hide_funcs = [pyViewX.HideAccuracyMonitor,
+                        # pyViewX.HideEyeImageMonitor,
+                        # pyViewX.HideSceneVideoMonitor,
+                        # pyViewX.HideTrackingMonitor
+                        # ]
+            # for f in hide_funcs:
+                    # f()
+        # except Exception:
+            # print2err('Exception while trying to call: {0}'.format(f))
+    
+    def runNewSetupProcedure(self,starting_state=EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE):
+        
+        if self.isConnected() is False:
+            return EyeTrackerConstants.EYETRACKER_ERROR
+        
+        self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
+            
+    
     def runSetupProcedure(self,starting_state=EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE):
         """
         The SMI iViewX implementation of the runSetupProcedure supports the following 
@@ -361,53 +558,32 @@ class EyeTracker(EyeTrackerDevice):
             return EyeTrackerConstants.EYETRACKER_ERROR
             
         try:       
-            IMPLEMENTATION_SUPPORTED_STATES=[EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE,
-                                             EyeTrackerConstants.CALIBRATION_STATE,
-                                             EyeTrackerConstants.VALIDATION_STATE,
-                                             EyeTrackerConstants.TRACKER_FEEDBACK_STATE]            
-
-            if isinstance(starting_state,basestring):
-                starting_state=EyeTrackerConstants.getID(starting_state)
-                        
-            self._registerKeyboardMonitor()
-
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
+			
+            #self._registerKeyboardMonitor()
+
+            self._calibrate()
+            
+            next_state=None
+            key_mapping={'C':self._calibrate,
+                         'V':self._validate,
+                         'RETURN':'CONTINUE'}
+            # while 1:
+                # if next_state is None:                    
+                    # next_state=self._getKeyboardPress(key_mapping)
+				
+                # if callable(next_state):
+                    # next_state()
+                    # next_state=None                            
+										
+                # elif next_state == 'CONTINUE':
+                    # break
                         
-            if starting_state not in IMPLEMENTATION_SUPPORTED_STATES:
-                self._last_setup_result=EyeTrackerConstants.EYETRACKER_RECEIVED_INVALID_INPUT
-            elif starting_state == EyeTrackerConstants.DEFAULT_SETUP_PROCEDURE:                                
-                self._showSetupKeyOptionsDialog()                    
-                next_state=None
-                key_mapping={'C':self._calibrate,
-                             'V':self._validate,
-                             'T':self._showTrackingMonitor,
-                             'E':self._showEyeImageMonitor,
-                             'ESCAPE':'CONTINUE',
-                             'F1':self._showSetupKeyOptionsDialog}
-                while 1:
-                    if next_state is None:                    
-                        next_state=self._getKeyboardPress(key_mapping)
-                    
-                    if callable(next_state):
-                        next_state()
-                        next_state=None                            
-                                            
-                    elif next_state == 'CONTINUE':
-                        break
-                       
-            elif starting_state == EyeTrackerConstants.CALIBRATION_STATE:
-                self._calibrate()
-            elif starting_state == EyeTrackerConstants.VALIDATION_STATE:
-                self._validate()
-            elif starting_state == EyeTrackerConstants.TRACKER_FEEDBACK_STATE:
-                self._showEyeImageMonitor()
-                self._showTrackingMonitor()
-            else:    
-                self._last_setup_result = EyeTrackerConstants.EYETRACKER_RECEIVED_INVALID_INPUT
-            self._unregisterKeyboardMonitor()
+            #self._unregisterKeyboardMonitor()
             
             return self._last_setup_result
         except Exception, e:
+            print2err("exception!!!") 
             self._unregisterKeyboardMonitor()
             printExceptionDetailsToStdErr()
 
@@ -421,7 +597,129 @@ class EyeTracker(EyeTrackerDevice):
                     f()
         except Exception:
             print2err('Exception while trying to call: {0}'.format(f))
-                    
+
+    def internalCalib(self): 
+        self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
+
+        calibrationData=pyViewX.CalibrationStruct()
+        _iViewConfigMappings._createCalibrationStruct(self,calibrationData)
+        
+        # pyViewX.SetupCalibration return codes:
+        #
+        # RET_SUCCESS - intended functionality has been fulfilled
+        # ERR_WRONG_PARAMETER - parameter out of range
+        # ERR_WRONG_DEVICE - eye tracking device required for this
+        #                    function is not connected
+        # ERR_WRONG_CALIBRATION_METHOD - eye tracking device required
+        #                                for this calibration method 
+        #                                is not connected
+
+        result = pyViewX.SetupCalibration(byref(calibrationData))
+
+        if result == pyViewX.ERR_WRONG_PARAMETER:
+            print2err("Calibration Could not be Performed. An invalid setting was passed to the procedure.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_RECEIVED_INVALID_INPUT
+            
+        elif result == pyViewX.ERR_WRONG_DEVICE:
+            print2err("Calibration Could not be Performed. The iViewX Model being used does not support this Operation.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+
+        elif result == pyViewX.ERR_WRONG_CALIBRATION_METHOD:
+            print2err("Calibration Could not be Performed. The Calibration Type being used is not Supported by the attached iViewX Model.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+
+    
+        # pyViewX.Calibrate return codes:
+        #
+        # RET_SUCCESS - intended functionality has been fulfilled
+        # RET_CALIBRATION_ABORTED - Calibration was aborted
+        # ERR_NOT_CONNECTED - no connection established
+        # ERR_WRONG_DEVICE - eye tracking device required for 
+        #                    this function is not connected
+        # ERR_WRONG_CALIBRATION_METHOD - eye tracking device required
+        #                    for this calibration method is not connected            
+        result = pyViewX.Calibrate()  
+
+        if result == pyViewX.ERR_NOT_CONNECTED:
+            print2err("Tracking Monitor can not be Displayed. An iViewX System is not Connected to the ioHub.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_NOT_CONNECTED
+        elif result == pyViewX.RET_CALIBRATION_ABORTED:
+            print2err("The Calibration Procedure was Aborted.")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_SETUP_ABORTED
+        elif result == pyViewX.ERR_WRONG_DEVICE:
+            print2err("Calibration Could not be Performed. The iViewX Model being used does not support this Operation.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+        elif result == pyViewX.ERR_WRONG_CALIBRATION_METHOD:
+            print2err("Calibration Could not be Performed. The Calibration Type being used is not Supported by the attached iViewX Model.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+        else:
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
+            #print2err("Calibration Completed. Press 'V' to Validate. 'C' to Recalibrate, or 'RETURN' to begin")
+            
+        return self._last_setup_result  
+
+
+    def internalValid(self): 
+
+        result=pyViewX.Validate()
+
+        if result == pyViewX.ERR_NOT_CONNECTED:
+            print2err("Validation Procedure Failed. An iViewX System is not Connected to the ioHub.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_NOT_CONNECTED
+        elif result == pyViewX.ERR_NOT_CALIBRATED:
+            print2err("Validation can only be Performed after a Successful Calibration.",
+                                  "Common Eye Tracker Interface - WARNING")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_VALIDATION_ERROR
+        elif result == pyViewX.ERR_WRONG_DEVICE:
+            print2err("Validation Procedure Failed. The iViewX Model being used does not support this Operation.",
+                                  "Common Eye Tracker Interface - ERROR")
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+        elif result == pyViewX.RET_CALIBRATION_ABORTED:
+            print2err("The Validation Procedure was Aborted.")
+        else:
+            self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
+            
+            show_validation_results= self.getConfiguration()['calibration'].get('show_validation_accuracy_window',False)
+    
+            # pyViewX.GetAccuracy return codes:
+            #
+            # RET_SUCCESS - intended functionality has been fulfilled
+            # RET_NO_VALID_DATA - No new data available
+            # ERR_NOT_CONNECTED - no connection established
+            # ERR_NOT_CALIBRATED - system is not calibrated
+            # ERR_NOT_VALIDATED - system is not validated
+            # ERR_WRONG_PARAMETER - parameter out of range
+            accuracy_results=pyViewX.AccuracyStruct()
+            result = pyViewX.GetAccuracy(byref(accuracy_results),show_validation_results)
+    
+            if result == pyViewX.ERR_NOT_CONNECTED:
+                self._showSimpleWin32Dialog("Validation Procedure Failed. An iViewX System is not Connected to the ioHub.",
+                                      "Common Eye Tracker Interface - ERROR")
+                self._last_setup_result=EyeTrackerConstants.EYETRACKER_NOT_CONNECTED
+            elif result == pyViewX.ERR_NOT_CALIBRATED:
+                self._showSimpleWin32Dialog("Validation can only be Performed after a Successful Calibration.",
+                                      "Common Eye Tracker Interface - WARNING")
+                self._last_setup_result=EyeTrackerConstants.EYETRACKER_VALIDATION_ERROR
+            elif result == pyViewX.ERR_NOT_VALIDATED:
+                self._showSimpleWin32Dialog("Validation Accuracy Calculation Failed. The System has not been Validated.",
+                                      "Common Eye Tracker Interface - ERROR")
+                self._last_setup_result=EyeTrackerConstants.EYETRACKER_VALIDATION_ERROR
+            elif result == pyViewX.ERR_WRONG_PARAMETER:
+                self._showSimpleWin32Dialog("Validation Accuracy Calculation Failed. An invalid setting was passed to the procedure.",
+                                      "Common Eye Tracker Interface - ERROR")
+                self._last_setup_result=EyeTrackerConstants.EYETRACKER_RECEIVED_INVALID_INPUT
+            else:
+                self._last_setup_result=dict()
+                for a in accuracy_results.__slots__:
+                    self._last_setup_result[a]=getattr(accuracy_results,a)
+            
     def _showSimpleWin32Dialog(self, message, caption):
         import win32gui
         win32gui.MessageBox(None, message, caption, 0)
@@ -476,8 +774,39 @@ class EyeTracker(EyeTrackerDevice):
             self._showSimpleWin32Dialog("Tracking Monitor can not be Displayed. The iViewX Model being used does not support this Operation.",
                                   "Common Eye Tracker Interface - ERROR")
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+    
+    def getCurrentCalibrationPoint(self):
+        #print2err("getting calibration point")
+        calib_point=pyViewX.CalibrationPointStruct()
+
+        point_res = pyViewX.GetCurrentCalibrationPoint(byref(calib_point))
+            
+        if point_res == pyViewX.RET_SUCCESS:
+            num = getattr(calib_point,'number')
+            x = getattr(calib_point,'positionX')
+            y = getattr(calib_point,'positionY')            
+            #print2err("calib point " + str(num) + ": x = " + str(x) + " y = " + str(y))
+            return (num, x, y)
+            
+        return point_res
         
+    def getCalibrationQuality(self, point_num):
+        #print2err("getting calibration point quality")
+        left=pyViewX.CalibrationPointQualityStruct()
+        right=pyViewX.CalibrationPointQualityStruct()
+        
+        point_res = pyViewX.GetCalibrationQuality(point_num, byref(left), byref(right))
+            
+        if point_res == pyViewX.RET_SUCCESS:
+            num = getattr(left,'number')
+            quality = getattr(left,'qualityIndex')        
+            
+            return (num, quality)
+        return point_res
+    
+    
     def _calibrate(self):
+        print2err("Starting Calibration")
         calibrationData=pyViewX.CalibrationStruct()
         _iViewConfigMappings._createCalibrationStruct(self,calibrationData)
         
@@ -525,8 +854,7 @@ class EyeTracker(EyeTrackerDevice):
                                   "Common Eye Tracker Interface - ERROR")
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_NOT_CONNECTED
         elif result == pyViewX.RET_CALIBRATION_ABORTED:
-            self._showSimpleWin32Dialog("The Calibration Procedure was Aborted.",
-                                  "Common Eye Tracker Interface - WARNING")
+            print2err("The Calibration Procedure was Aborted.")
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_SETUP_ABORTED
         elif result == pyViewX.ERR_WRONG_DEVICE:
             self._showSimpleWin32Dialog("Calibration Could not be Performed. The iViewX Model being used does not support this Operation.",
@@ -538,10 +866,10 @@ class EyeTracker(EyeTrackerDevice):
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
         else:
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
-            self._showSimpleWin32Dialog("Calibration Completed. Press 'V' to Validate, ESCAPE to exit Setup, F1 to view all Options.",
-                                  "Common Eye Tracker Interface")
+            #print2err("Calibration Completed. Press 'V' to Validate. 'C' to Recalibrate, or 'RETURN' to begin")
             
     def _validate(self):
+        print2err("Starting Validation")
         # pyViewX.Validate return codes:
         #
         # RET_SUCCESS - intended functionality has been fulfilled
@@ -563,6 +891,8 @@ class EyeTracker(EyeTrackerDevice):
             self._showSimpleWin32Dialog("Validation Procedure Failed. The iViewX Model being used does not support this Operation.",
                                   "Common Eye Tracker Interface - ERROR")
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_MODEL_NOT_SUPPORTED
+        elif result == pyViewX.RET_CALIBRATION_ABORTED:
+            print2err("The Validation Procedure was Aborted.")
         else:
             self._last_setup_result=EyeTrackerConstants.EYETRACKER_OK
             
@@ -599,21 +929,19 @@ class EyeTracker(EyeTrackerDevice):
                 self._last_setup_result=dict()
                 for a in accuracy_results.__slots__:
                     self._last_setup_result[a]=getattr(accuracy_results,a)
-            
-                self._showSimpleWin32Dialog("Validation Completed. Press ESCAPE to return to the Experiment Script, F1 to view all Options.",
-                                      "Common Eye Tracker Interface")
         
     def _getKeyboardPress(self,key_mappings):
         from ..... import KeyboardPressEvent
         while 1:
+            #print2err("inkeyboard")
             while len(self._kbEventQueue)>0:
                 event=copy.deepcopy((self._kbEventQueue.pop(0)))
                 ke=KeyboardPressEvent.createEventAsNamedTuple(event)
                 key=ke.key.upper() 
                 if key in key_mappings.keys():
-                    del self._kbEventQueue[:]
+                    del self._kbEventQueue[:]					
                     return key_mappings[key]
-            gevent.sleep(0.02)
+            gevent.sleep(0.03)
                         
     def _registerKeyboardMonitor(self):
         kbDevice=None        
@@ -622,7 +950,7 @@ class EyeTracker(EyeTrackerDevice):
                 if dev.__class__.__name__ == 'Keyboard':             
                     kbDevice=dev
 
-        if kbDevice:
+        if kbDevice:	
             eventIDs=[]
             for event_class_name in kbDevice.__class__.EVENT_CLASS_NAMES:
                 eventIDs.append(getattr(EventConstants,convertCamelToSnake(event_class_name[:-5],False)))
@@ -1033,9 +1361,9 @@ class _iViewConfigMappings(object):
     # supported calibration modes    
     calibration_methods = dict( NO_POINTS=0,TWO_POINTS=2,THREE_POINTS=3,FIVE_POINTS=5, NINE_POINTS=9, THIRTEEN_POINTS=13)
     graphics_env = dict(INTERNAL=1, EXTERNAL=0)
-    auto_pace = dict (True=1, False=0, Yes=1, No=0, On=1, Off=0)
+    auto_pace = dict(FULL=2, SEMI=1, MANUAL=0)
     pacing_speed = dict(SLOW=0, FAST=1)
-    target_type= dict(IMAGE=0, CIRCLE_TARGET=1, CIRCLE_TARGET_V2=2, CROSS=3)
+    target_type= dict(IMAGE_TARGET=0, CIRCLE_TARGET=1, CIRCLE_TARGET_V2=2, CROSS=3)
                         
     @classmethod
     def _createCalibrationStruct(cls,eyetracker, calibration_struct):
@@ -1050,12 +1378,12 @@ class _iViewConfigMappings(object):
         #targetSize: Set Calibration/Validation Target Size (default: 10 pixels) 
         #targetFilename: Select Custom Calibration/Validation Target
         calibration_config=eyetracker.getConfiguration()['calibration']
-
+		
         calibration_struct.method=c_int(_iViewConfigMappings.calibration_methods[calibration_config.get('type','FIVE_POINTS')])
         calibration_struct.visualization=c_int(_iViewConfigMappings.graphics_env[calibration_config.get('graphics_env','INTERNAL')])
         calibration_struct.displayDevice=c_int(eyetracker._display_device.getIndex())
         calibration_struct.speed=c_int(_iViewConfigMappings.pacing_speed[calibration_config.get('pacing_speed',0)])
-        calibration_struct.autoAccept=c_int(calibration_config.get('auto_pace',1))
+        calibration_struct.autoAccept=c_int(_iViewConfigMappings.auto_pace[calibration_config.get('auto_pace',2)])
         calibration_struct.backgroundBrightness=c_int(calibration_config.get('screen_background_color',239))
         calibration_struct.targetShape=c_int(_iViewConfigMappings.target_type[calibration_config.get('target_type','CIRCLE_TARGET')])
         calibration_struct.targetFilename=b''
@@ -1066,7 +1394,7 @@ class _iViewConfigMappings(object):
             calibration_struct.targetSize=c_int(target_settings.get('target_size',30))
 
         elif calibration_config['target_type'] =='IMAGE_TARGET':
-            calibration_struct.targetFilename=pyViewX.String(calibration_config['image_attributes'].get('file_name',b''))
+            calibration_struct.targetFilename=calibration_config['image_attributes'].get('file_name',b'').encode()
             calibration_struct.targetSize=c_int(calibration_config['image_attributes'].get('target_size',30))
         
         elif calibration_config['target_type'] == 'CROSSHAIR_TARGET':
